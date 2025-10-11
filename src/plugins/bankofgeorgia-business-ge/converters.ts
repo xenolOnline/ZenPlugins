@@ -1,4 +1,4 @@
-import { Account as ZenMoneyAccount, AccountType, Transaction as ZenMoneyTransaction, Movement as TransactionMovement } from '../../types/zenmoney'
+import { Account as ZenMoneyAccount, AccountType, ExtendedTransaction, Movement as TransactionMovement } from '../../types/zenmoney'
 import { Account, AccountRecord, Record } from './models'
 
 export function convertToZenMoneyAccount (account: Account): ZenMoneyAccount {
@@ -38,7 +38,7 @@ function createCounterpartyMovement (record: AccountRecord, sum: number, fee = 0
   }
 }
 
-function addMatchingConversion (record: AccountRecord, transaction: ZenMoneyTransaction, allRecords: AccountRecord[]): void {
+function addMatchingConversion (record: AccountRecord, transaction: ExtendedTransaction, allRecords: AccountRecord[]): void {
   const matchingRecord = allRecords.find(r =>
     r.DocumentProductGroup === 'PLC' &&
     r.AccountID !== record.AccountID &&
@@ -49,7 +49,19 @@ function addMatchingConversion (record: AccountRecord, transaction: ZenMoneyTran
     transaction.movements.push(createMovement(matchingRecord, matchingRecord.EntryAmount))
   }
 }
-export function convertToZenMoneyTransaction (record: AccountRecord, allRecords: AccountRecord[]): ZenMoneyTransaction {
+function parseLocalDate (dateString: string): Date {
+  // Parse date in local timezone (Georgia time)
+  // API returns dates like "2025-09-15T00:00:00" which should be interpreted as local time
+  const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (match != null) {
+    const [, year, month, day] = match
+    return new Date(Number(year), Number(month) - 1, Number(day), 0, 0, 0)
+  }
+  // Fallback to default Date parsing
+  return new Date(dateString)
+}
+
+export function convertToZenMoneyTransaction (record: AccountRecord, allRecords: AccountRecord[]): ExtendedTransaction {
   const mccMatch = record.EntryComment.match(/MCC:\s*(\d{4})/)
 
   let mcc: number | null = null
@@ -57,9 +69,9 @@ export function convertToZenMoneyTransaction (record: AccountRecord, allRecords:
     mcc = parseInt(mccMatch[1])
   }
 
-  const transaction: ZenMoneyTransaction = {
+  const transaction: ExtendedTransaction = {
     hold: false,
-    date: new Date(record.EntryDate),
+    date: parseLocalDate(record.EntryDate),
     movements: [createMovement(record, record.EntryAmount)],
     merchant: record.BeneficiaryDetails.Name === '' ? null : { city: null, country: null, mcc, title: record.BeneficiaryDetails.Name, location: null },
     comment: record.EntryComment
@@ -80,6 +92,10 @@ export function convertToZenMoneyTransaction (record: AccountRecord, allRecords:
         ]
         transaction.movements.push(...movements)
       }
+      // Add groupKeys for adjustTransactions to merge related transfers
+      if (record.EntryId !== record.DocumentKey) {
+        transaction.groupKeys = [record.DocumentKey]
+      }
       break
 
     case 'CCO':
@@ -98,6 +114,8 @@ export function convertToZenMoneyTransaction (record: AccountRecord, allRecords:
           invoice: null
         }
       )
+      // Add groupKeys for currency exchange
+      transaction.groupKeys = [record.DocumentKey]
       break
 
     case 'COM':

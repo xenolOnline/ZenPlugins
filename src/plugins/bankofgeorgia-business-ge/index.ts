@@ -1,4 +1,4 @@
-import { ScrapeFunc, Account as ZenMoneyAccount, Transaction as ZenMoneyTransaction } from '../../types/zenmoney'
+import { ScrapeFunc, Account, ExtendedTransaction } from '../../types/zenmoney'
 import { parseAccounts, fetchTransactions, fetchBalance } from './api'
 import { convertToZenMoneyAccount, convertToZenMoneyTransaction, injectAccountInfo } from './converters'
 import { AccountRecord, Preferences } from './models'
@@ -8,7 +8,7 @@ export const scrape: ScrapeFunc<Preferences> = async ({ preferences, fromDate, t
   toDate = toDate ?? new Date()
 
   const accounts = parseAccounts(preferences)
-  const zenAccounts: ZenMoneyAccount[] = []
+  const zenAccounts: Account[] = []
 
   let records: AccountRecord[] = []
 
@@ -26,13 +26,13 @@ export const scrape: ScrapeFunc<Preferences> = async ({ preferences, fromDate, t
     records = records.concat(accountRecords)
   }
 
-  const zenTransactions: ZenMoneyTransaction[] = []
+  const transactions: ExtendedTransaction[] = []
   for (const record of records) {
-    zenTransactions.push(convertToZenMoneyTransaction(record, records))
+    transactions.push(convertToZenMoneyTransaction(record, records))
   }
 
   return {
     accounts: zenAccounts,
-    transactions: adjustTransactions({ transactions: zenTransactions })
+    transactions: adjustTransactions({ transactions })
   }
 }

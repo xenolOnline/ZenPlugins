@@ -83,7 +83,8 @@ describe('convertToZenMoneyTransaction', () => {
         mcc: null,
         location: null
       },
-      comment: 'Tax Payment'
+      comment: 'Tax Payment',
+      groupKeys: ['00000000000.0']
     }],
 
     ['incoming transfer', {
@@ -164,7 +165,8 @@ describe('convertToZenMoneyTransaction', () => {
         mcc: null,
         location: null
       },
-      comment: 'Transfer'
+      comment: 'Transfer',
+      groupKeys: ['00000000000.0']
     }],
 
     ['exchange', {
@@ -247,7 +249,8 @@ describe('convertToZenMoneyTransaction', () => {
         location: null
       },
       comment: 'Curren' +
-        'cy exchange. Rate: 2.500 Counter amount: USD40.00. Conversion'
+        'cy exchange. Rate: 2.500 Counter amount: USD40.00. Conversion',
+      groupKeys: ['00000000000.0']
     }],
 
     ['fee', {
@@ -309,6 +312,67 @@ describe('convertToZenMoneyTransaction', () => {
       ],
       merchant: null,
       comment: 'Business package service fee'
+    }],
+
+    ['verification entry (VE)', {
+      Currency: 'GEL',
+      AccountID: 'GE00BG0000000000000000GEL',
+      EntryDate: '2023-01-05T00:00:00',
+      EntryDocumentNumber: 'VE',
+      EntryAccountNumber: '00000000000000000000',
+      EntryAmountDebit: 10.0,
+      EntryAmountDebitBase: 10.0,
+      EntryAmountCredit: 0.0,
+      EntryAmountBase: 10.0,
+      EntryAmount: -10.0,
+      EntryComment: 'Bank statement fee',
+      EntryDepartment: 'DEPT00',
+      EntryAccountPoint: 'BRANCH00',
+      DocumentProductGroup: 'VE',
+      DocumentValueDate: '2023-01-05T00:00:00',
+      SenderDetails: {
+        Name: 'COMPANY NAME LLC',
+        Inn: '000000000',
+        AccountNumber: 'GE00BG0000000000000000GEL',
+        BankCode: 'BANKGE22',
+        BankName: 'BANK OF GEORGIA'
+      },
+      BeneficiaryDetails: {
+        Name: '',
+        AccountNumber: '00000000000000000000',
+        BankCode: 'BANKGE22',
+        BankName: 'BANK OF GEORGIA'
+      },
+      DocumentNomination: 'Bank statement fee',
+      DocumentInformation: 'Bank statement fee',
+      DocumentSourceAmount: 10.0,
+      DocumentSourceCurrency: 'GEL',
+      DocumentDestinationAmount: 10.0,
+      DocumentDestinationCurrency: 'GEL',
+      DocumentReceiveDate: '2023-01-05T00:00:00',
+      DocumentBranch: '000',
+      DocumentDepartment: 'DEPT00',
+      DocumentCorrespondentAccountNumber: '00000000000000000000',
+      DocumentCorrespondentBankCode: 'BANKGE22',
+      DocumentCorrespondentBankName: 'BANK OF GEORGIA',
+      DocumentKey: '00000000000.0',
+      EntryId: '11100000000.0',
+      DocumentPayerName: 'COMPANY NAME LLC',
+      DocumentPayerInn: '000000000'
+    }, {
+      hold: false,
+      date: new Date('2023-01-05T00:00:00'),
+      movements: [
+        {
+          id: '11100000000.0',
+          account: { id: 'GE00BG0000000000000000GEL' },
+          sum: 0,
+          fee: 10,
+          invoice: null
+        }
+      ],
+      merchant: null,
+      comment: 'Bank statement fee'
     }]
   ])('converts %s', (_, accountRecord, expectedTransaction) => {
     expect(convertToZenMoneyTransaction(accountRecord as AccountRecord, [accountRecord as AccountRecord])).toEqual(expectedTransaction)
